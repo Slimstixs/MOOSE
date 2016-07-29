@@ -84,7 +84,7 @@ function PATROLZONE:SetGroup( PatrolGroup )
 
   if not self.PatrolOutOfFuelMonitor then
     self.PatrolOutOfFuelMonitor = SCHEDULER:New( nil, _MonitorOutOfFuelScheduled, { self }, 1, 120, 0 )
-    self.SpawnPatrolGroup = SPAWN:New( self.PatrolGroupTemplateName )
+    self.SpawnPatrolGroup = SPAWN:New( self.PatrolGroupTemplateName ):CleanUp( 60 )
   end
 
   return self  
@@ -235,7 +235,7 @@ function PATROLZONE:ManageFuel( PatrolFuelTresholdPercentage, PatrolOutOfFuelOrb
   
   if self.PatrolGroup then
     self.PatrolOutOfFuelMonitor = SCHEDULER:New( self, self._MonitorOutOfFuelScheduled, {}, 1, 120, 0 )
-    self.SpawnPatrolGroup = SPAWN:New( self.PatrolGroupTemplateName )
+    self.SpawnPatrolGroup = SPAWN:New( self.PatrolGroupTemplateName ):CleanUp( 60 )
   end
   return self
 end
