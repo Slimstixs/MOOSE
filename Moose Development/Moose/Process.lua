@@ -33,27 +33,21 @@ function PROCESS:New( ProcessName, Task, ProcessUnit )
   self.Task = Task
   self.ProcessName = ProcessName
   
-  self.AllowEvents = true
+  self.ProcessScheduler = SCHEDULER:New()
   
   return self
 end
 
 --- @param #PROCESS self
 function PROCESS:NextEvent( NextEvent, ... )
-  if self.AllowEvents == true then
-    self.ProcessScheduler = SCHEDULER:New( self.Fsm, NextEvent, arg, 1 )
-  end
+  self:F(self.ProcessName)
+  self.ProcessScheduler:Schedule( self.Fsm, NextEvent, arg, 1 ) -- This schedules the next event, but only if scheduling is activated.
 end
 
 --- @param #PROCESS self
-function PROCESS:StopEvents( )
-  self:F2()
-  if self.ProcessScheduler then
-    self:E( "Stop" )
-    self.ProcessScheduler:Stop()
-    self.ProcessScheduler = nil
-    self.AllowEvents = false
-  end
+function PROCESS:StopEvents()
+  self:F( { "Stop Process ", self.ProcessName } )
+  self.ProcessScheduler:Stop()
 end
 
 --- Adds a score for the PROCESS to be achieved.

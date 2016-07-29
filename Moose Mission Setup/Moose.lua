@@ -1,5 +1,5 @@
 env.info( '*** MOOSE STATIC INCLUDE START *** ' ) 
-env.info( 'Moose Generation Timestamp: 20160723_1028' ) 
+env.info( 'Moose Generation Timestamp: 20160723_2026' ) 
 local base = _G
 
 Include = {}
@@ -6287,8 +6287,23 @@ end
 --  * @{Scheduler#SCHEDULER.Start}: (Re-)Start the scheduler.
 --  * @{Scheduler#SCHEDULER.Stop}: Stop the scheduler.
 --
+-- 1.3) Reschedule new time event
+-- ------------------------------
+-- With @{Scheduler#SCHEDULER.Schedule} a new time event can be scheduled.
+--
+-- ===
+--
+-- ### Contributions: 
+-- 
+--   * Mechanist : Concept & Testing
+-- 
+-- ### Authors: 
+-- 
+--   * FlightControl : Design & Programming
+-- 
+-- ===
+--
 -- @module Scheduler
--- @author FlightControl
 
 
 --- The SCHEDULER class
@@ -6313,28 +6328,33 @@ function SCHEDULER:New( TimeEventObject, TimeEventFunction, TimeEventFunctionArg
   local self = BASE:Inherit( self, BASE:New() )
   self:F2( { TimeEventObject, TimeEventFunction, TimeEventFunctionArguments, StartSeconds, RepeatSecondsInterval, RandomizationFactor, StopSeconds } )
 
+
+  self:Schedule( TimeEventObject, TimeEventFunction, TimeEventFunctionArguments, StartSeconds, RepeatSecondsInterval, RandomizationFactor, StopSeconds )
+
+  return self
+end
+
+--- Schedule a new time event. Note that the schedule will only take place if the scheduler is *started*. Even for a single schedule event, the scheduler needs to be started also.
+-- @param #SCHEDULER self
+-- @param #table TimeEventObject Specified for which Moose object the timer is setup. If a value of nil is provided, a scheduler will be setup without an object reference.
+-- @param #function TimeEventFunction The event function to be called when a timer event occurs. The event function needs to accept the parameters specified in TimeEventFunctionArguments.
+-- @param #table TimeEventFunctionArguments Optional arguments that can be given as part of scheduler. The arguments need to be given as a table { param1, param 2, ... }.
+-- @param #number StartSeconds Specifies the amount of seconds that will be waited before the scheduling is started, and the event function is called.
+-- @param #number RepeatSecondsInterval Specifies the interval in seconds when the scheduler will call the event function.
+-- @param #number RandomizationFactor Specifies a randomization factor between 0 and 1 to randomize the RepeatSecondsInterval.
+-- @param #number StopSeconds Specifies the amount of seconds when the scheduler will be stopped.
+-- @return #SCHEDULER self
+function SCHEDULER:Schedule( TimeEventObject, TimeEventFunction, TimeEventFunctionArguments, StartSeconds, RepeatSecondsInterval, RandomizationFactor, StopSeconds )
+  self:F2( { TimeEventFunctionArguments, StartSeconds, RepeatSecondsInterval, RandomizationFactor, StopSeconds } )
+
   self.TimeEventObject = TimeEventObject
   self.TimeEventFunction = TimeEventFunction
   self.TimeEventFunctionArguments = TimeEventFunctionArguments
   self.StartSeconds = StartSeconds
   self.Repeat = false
-
-  if RepeatSecondsInterval then
-    self.RepeatSecondsInterval = RepeatSecondsInterval
-  else
-    self.RepeatSecondsInterval = 0
-  end
-
-  if RandomizationFactor then
-    self.RandomizationFactor = RandomizationFactor
-  else
-    self.RandomizationFactor = 0
-  end
-
-  if StopSeconds then
-    self.StopSeconds = StopSeconds
-  end
-
+  self.RepeatSecondsInterval = RepeatSecondsInterval or 0
+  self.RandomizationFactor = RandomizationFactor or 0
+  self.StopSeconds = StopSeconds
 
   self.StartTime = timer.getTime()
 
@@ -6352,8 +6372,14 @@ function SCHEDULER:Start()
   if self.RepeatSecondsInterval ~= 0 then
     self.Repeat = true
   end
-  self.ScheduleID = timer.scheduleFunction( self._Scheduler, self, timer.getTime() + self.StartSeconds + .01 )
-
+  
+  if self.StartSeconds then
+    if self.ScheduleID then
+      timer.removeFunction( self.ScheduleID )
+    end
+    self.ScheduleID = timer.scheduleFunction( self._Scheduler, self, timer.getTime() + self.StartSeconds + .01 )
+  end
+  
   return self
 end
 
@@ -6388,6 +6414,13 @@ function SCHEDULER:_Scheduler()
     
     return errmsg
   end
+  
+  local StartTime = self.StartTime
+  local StopSeconds = self.StopSeconds
+  local Repeat = self.Repeat
+  local RandomizationFactor = self.RandomizationFactor
+  local RepeatSecondsInterval = self.RepeatSecondsInterval
+  local ScheduleID = self.ScheduleID
 
   local Status, Result
   if self.TimeEventObject then
@@ -6396,26 +6429,26 @@ function SCHEDULER:_Scheduler()
     Status, Result = xpcall( function() return self.TimeEventFunction( unpack( self.TimeEventFunctionArguments ) ) end, ErrorHandler )
   end
 
-  self:T( { self.TimeEventFunctionArguments, Status, Result, self.StartTime, self.RepeatSecondsInterval, self.RandomizationFactor, self.StopSeconds } )
+  self:T( { "Timer Event2 .. " .. self.ScheduleID, Status, Result, StartTime, RepeatSecondsInterval, RandomizationFactor, StopSeconds } )
 
   if Status and ( ( Result == nil ) or ( Result and Result ~= false ) ) then
-    if self.Repeat and ( not self.StopSeconds or ( self.StopSeconds and timer.getTime() <= self.StartTime + self.StopSeconds ) ) then
+    if Repeat and ( not StopSeconds or ( StopSeconds and timer.getTime() <= StartTime + StopSeconds ) ) then
       local ScheduleTime =
         timer.getTime() +
         self.RepeatSecondsInterval +
         math.random(
-          - ( self.RandomizationFactor * self.RepeatSecondsInterval / 2 ),
-          ( self.RandomizationFactor * self.RepeatSecondsInterval  / 2 )
+          - ( RandomizationFactor * RepeatSecondsInterval / 2 ),
+          ( RandomizationFactor * RepeatSecondsInterval  / 2 )
         ) +
         0.01
       self:T( { self.TimeEventFunctionArguments, "Repeat:", timer.getTime(), ScheduleTime } )
       return ScheduleTime -- returns the next time the function needs to be called.
     else
-      timer.removeFunction( self.ScheduleID )
+      timer.removeFunction( ScheduleID )
       self.ScheduleID = nil
     end
   else
-    timer.removeFunction( self.ScheduleID )
+    timer.removeFunction( ScheduleID )
     self.ScheduleID = nil
   end
 
@@ -7156,7 +7189,7 @@ function EVENT:onEvent( Event )
       Event.WeaponName = Event.Weapon:getTypeName()
       --Event.WeaponTgtDCSUnit = Event.Weapon:getTarget()
     end
-    self:E( { _EVENTCODES[Event.id], Event.IniUnitName, Event.TgtUnitName, Event.WeaponName } )
+    self:E( { _EVENTCODES[Event.id], Event.initiator, Event.IniDCSUnitName, Event.target, Event.TgtDCSUnitName, Event.weapon, Event.WeaponName } )
     for ClassName, EventData in pairs( self.Events[Event.id] ) do
       if Event.IniDCSUnitName and EventData.IniUnit and EventData.IniUnit[Event.IniDCSUnitName] then 
         self:T( { "Calling event function for class ", ClassName, " unit ", Event.IniUnitName } )
@@ -7192,23 +7225,26 @@ end
 -- 
 -- ### To manage **main menus**, the classes begin with **MENU_**:
 -- 
---   * @{Menu#MENU_CLIENT}: Manages main menus for CLIENTs. This manages menus for units with the skill level "Client".
+--   * @{Menu#MENU_MISSION}: Manages main menus for whole mission file.
+--   * @{Menu#MENU_COALITION}: Manages main menus for whole coalition.
 --   * @{Menu#MENU_GROUP}: Manages main menus for GROUPs.
---   * @{Menu#MENU_COALITION}: Manages main menus for whole COALITIONs.
+--   * @{Menu#MENU_CLIENT}: Manages main menus for CLIENTs. This manages menus for units with the skill level "Client".
 --   
 -- ### To manage **command menus**, which are menus that allow the player to issue **functions**, the classes begin with **MENU_COMMAND_**:
 --   
---   * @{Menu#MENU_CLIENT_COMMAND}: Manages command menus for CLIENTs. This manages menus for units with the skill level "Client".
+--   * @{Menu#MENU_MISSION_COMMAND}: Manages command menus for whole mission file.
+--   * @{Menu#MENU_COALITION_COMMAND}: Manages command menus for whole coalition.
 --   * @{Menu#MENU_GROUP_COMMAND}: Manages command menus for GROUPs.
---   * @{Menu#MENU_COALITION_COMMAND}: Manages command menus for whole COALITIONs.
+--   * @{Menu#MENU_CLIENT_COMMAND}: Manages command menus for CLIENTs. This manages menus for units with the skill level "Client".
 -- 
 -- ===
 -- 
 -- The above menus classes **are derived** from 2 main **abstract** classes defined within the MOOSE framework (so don't use these):
 -- 
--- 1) MENU_ BASE classes (don't use them)
--- ======================================
--- The underlying base menu classes are not to be used within your missions. They simply are abstract classes defining a couple of fields that are used by the 
+-- 1) MENU_ BASE abstract base classes (don't use them)
+-- ====================================================
+-- The underlying base menu classes are **NOT** to be used within your missions.
+-- These are simply abstract base classes defining a couple of fields that are used by the 
 -- derived MENU_ classes to manage menus.
 -- 
 -- 1.1) @{Menu#MENU_BASE} class, extends @{Base#BASE}
@@ -7221,45 +7257,41 @@ end
 -- 
 -- ===
 -- 
--- The next menus define the MENU classes that you can use within your missions:
+-- **The next menus define the MENU classes that you can use within your missions.**
+--  
+-- 2) MENU MISSION classes
+-- ======================
+-- The underlying classes manage the menus for a complete mission file.
 -- 
--- 2) MENU COALITION classes
+-- 2.1) @{Menu#MENU_MISSION} class, extends @{Menu#MENU_BASE}
+-- ---------------------------------------------------------
+-- The @{Menu#MENU_MISSION} class manages the main menus for a complete mission.  
+-- You can add menus with the @{#MENU_MISSION.New} method, which constructs a MENU_MISSION object and returns you the object reference.
+-- Using this object reference, you can then remove ALL the menus and submenus underlying automatically with @{#MENU_MISSION.Remove}.
+-- 
+-- 2.2) @{Menu#MENU_MISSION_COMMAND} class, extends @{Menu#MENU_COMMAND_BASE}
+-- -------------------------------------------------------------------------
+-- The @{Menu#MENU_MISSION_COMMAND} class manages the command menus for a complete mission, which allow players to execute functions during mission execution.  
+-- You can add menus with the @{#MENU_MISSION_COMMAND.New} method, which constructs a MENU_MISSION_COMMAND object and returns you the object reference.
+-- Using this object reference, you can then remove ALL the menus and submenus underlying automatically with @{#MENU_MISSION_COMMAND.Remove}.
+-- 
+-- ===
+-- 
+-- 3) MENU COALITION classes
 -- =========================
 -- The underlying classes manage the menus for whole coalitions.
 -- 
--- 2.1) @{Menu#MENU_COALITION} class, extends @{Menu#MENU_BASE}
+-- 3.1) @{Menu#MENU_COALITION} class, extends @{Menu#MENU_BASE}
 -- ------------------------------------------------------------
 -- The @{Menu#MENU_COALITION} class manages the main menus for coalitions.  
 -- You can add menus with the @{#MENU_COALITION.New} method, which constructs a MENU_COALITION object and returns you the object reference.
 -- Using this object reference, you can then remove ALL the menus and submenus underlying automatically with @{#MENU_COALITION.Remove}.
--- Refer to the respective methods documentation for usage examples.
 -- 
--- 2.2) @{Menu#MENU_COALITION_COMMAND} class, extends @{Menu#MENU_COMMAND_BASE}
+-- 3.2) @{Menu#MENU_COALITION_COMMAND} class, extends @{Menu#MENU_COMMAND_BASE}
 -- ----------------------------------------------------------------------------
 -- The @{Menu#MENU_COALITION_COMMAND} class manages the command menus for coalitions, which allow players to execute functions during mission execution.  
 -- You can add menus with the @{#MENU_COALITION_COMMAND.New} method, which constructs a MENU_COALITION_COMMAND object and returns you the object reference.
 -- Using this object reference, you can then remove ALL the menus and submenus underlying automatically with @{#MENU_COALITION_COMMAND.Remove}.
--- Refer to the respective methods documentation for usage examples.
--- 
--- ===
--- 
--- 3) MENU CLIENT classes
--- ======================
--- The underlying classes manage the menus for units with skill level client or player.
--- 
--- 3.1) @{Menu#MENU_CLIENT} class, extends @{Menu#MENU_BASE}
--- ---------------------------------------------------------
--- The @{Menu#MENU_CLIENT} class manages the main menus for coalitions.  
--- You can add menus with the @{#MENU_CLIENT.New} method, which constructs a MENU_CLIENT object and returns you the object reference.
--- Using this object reference, you can then remove ALL the menus and submenus underlying automatically with @{#MENU_CLIENT.Remove}.
--- Refer to the respective methods documentation for usage examples.
--- 
--- 3.2) @{Menu#MENU_CLIENT_COMMAND} class, extends @{Menu#MENU_COMMAND_BASE}
--- -------------------------------------------------------------------------
--- The @{Menu#MENU_CLIENT_COMMAND} class manages the command menus for coalitions, which allow players to execute functions during mission execution.  
--- You can add menus with the @{#MENU_CLIENT_COMMAND.New} method, which constructs a MENU_CLIENT_COMMAND object and returns you the object reference.
--- Using this object reference, you can then remove ALL the menus and submenus underlying automatically with @{#MENU_CLIENT_COMMAND.Remove}.
--- Refer to the respective methods documentation for usage examples.
 -- 
 -- ===
 -- 
@@ -7272,17 +7304,33 @@ end
 -- The @{Menu#MENU_GROUP} class manages the main menus for coalitions.  
 -- You can add menus with the @{#MENU_GROUP.New} method, which constructs a MENU_GROUP object and returns you the object reference.
 -- Using this object reference, you can then remove ALL the menus and submenus underlying automatically with @{#MENU_GROUP.Remove}.
--- Refer to the respective methods documentation for usage examples.
 -- 
 -- 4.2) @{Menu#MENU_GROUP_COMMAND} class, extends @{Menu#MENU_COMMAND_BASE}
 -- ------------------------------------------------------------------------
 -- The @{Menu#MENU_GROUP_COMMAND} class manages the command menus for coalitions, which allow players to execute functions during mission execution.  
 -- You can add menus with the @{#MENU_GROUP_COMMAND.New} method, which constructs a MENU_GROUP_COMMAND object and returns you the object reference.
 -- Using this object reference, you can then remove ALL the menus and submenus underlying automatically with @{#MENU_GROUP_COMMAND.Remove}.
--- Refer to the respective methods documentation for usage examples.
 -- 
 -- ===
---  
+-- 
+-- 5) MENU CLIENT classes
+-- ======================
+-- The underlying classes manage the menus for units with skill level client or player.
+-- 
+-- 5.1) @{Menu#MENU_CLIENT} class, extends @{Menu#MENU_BASE}
+-- ---------------------------------------------------------
+-- The @{Menu#MENU_CLIENT} class manages the main menus for coalitions.  
+-- You can add menus with the @{#MENU_CLIENT.New} method, which constructs a MENU_CLIENT object and returns you the object reference.
+-- Using this object reference, you can then remove ALL the menus and submenus underlying automatically with @{#MENU_CLIENT.Remove}.
+-- 
+-- 5.2) @{Menu#MENU_CLIENT_COMMAND} class, extends @{Menu#MENU_COMMAND_BASE}
+-- -------------------------------------------------------------------------
+-- The @{Menu#MENU_CLIENT_COMMAND} class manages the command menus for coalitions, which allow players to execute functions during mission execution.  
+-- You can add menus with the @{#MENU_CLIENT_COMMAND.New} method, which constructs a MENU_CLIENT_COMMAND object and returns you the object reference.
+-- Using this object reference, you can then remove ALL the menus and submenus underlying automatically with @{#MENU_CLIENT_COMMAND.Remove}.
+-- 
+-- ===
+-- 
 -- ### Contributions: -
 -- ### Authors: FlightControl : Design & Programming
 -- 
@@ -7347,6 +7395,124 @@ do -- MENU_COMMAND_BASE
   end
 
 end
+
+
+do -- MENU_MISSION
+
+  --- The MENU_MISSION class
+  -- @type MENU_MISSION
+  -- @extends Menu#MENU_BASE
+  MENU_MISSION = {
+    ClassName = "MENU_MISSION"
+  }
+  
+  --- MENU_MISSION constructor. Creates a new MENU_MISSION object and creates the menu for a complete mission file.
+  -- @param #MENU_MISSION self
+  -- @param #string MenuText The text for the menu.
+  -- @param #table ParentMenu The parent menu. This parameter can be ignored if you want the menu to be located at the perent menu of DCS world (under F10 other).
+  -- @return #MENU_MISSION self
+  function MENU_MISSION:New( MenuText, ParentMenu )
+  
+    local self = BASE:Inherit( self, MENU_BASE:New( MenuText, ParentMenu ) )
+    
+    self:F( { MenuText, ParentMenu } )
+  
+    self.MenuText = MenuText
+    self.ParentMenu = ParentMenu
+    
+    self.Menus = {}
+  
+    self:T( { MenuText } )
+  
+    self.MenuPath = missionCommands.addSubMenu( MenuText, self.MenuParentPath )
+  
+    self:T( { self.MenuPath } )
+  
+    if ParentMenu and ParentMenu.Menus then
+      ParentMenu.Menus[self.MenuPath] = self
+    end
+
+    return self
+  end
+  
+  --- Removes the sub menus recursively of this MENU_MISSION. Note that the main menu is kept!
+  -- @param #MENU_MISSION self
+  -- @return #MENU_MISSION self
+  function MENU_MISSION:RemoveSubMenus()
+    self:F( self.MenuPath )
+  
+    for MenuID, Menu in pairs( self.Menus ) do
+      Menu:Remove()
+    end
+  
+  end
+  
+  --- Removes the main menu and the sub menus recursively of this MENU_MISSION.
+  -- @param #MENU_MISSION self
+  -- @return #nil
+  function MENU_MISSION:Remove()
+    self:F( self.MenuPath )
+  
+    self:RemoveSubMenus()
+    missionCommands.removeItem( self.MenuPath )
+    if self.ParentMenu then
+      self.ParentMenu.Menus[self.MenuPath] = nil
+    end
+  
+    return nil
+  end
+
+end
+
+do -- MENU_MISSION_COMMAND
+  
+  --- The MENU_MISSION_COMMAND class
+  -- @type MENU_MISSION_COMMAND
+  -- @extends Menu#MENU_COMMAND_BASE
+  MENU_MISSION_COMMAND = {
+    ClassName = "MENU_MISSION_COMMAND"
+  }
+  
+  --- MENU_MISSION constructor. Creates a new radio command item for a complete mission file, which can invoke a function with parameters.
+  -- @param #MENU_MISSION_COMMAND self
+  -- @param #string MenuText The text for the menu.
+  -- @param Menu#MENU_MISSION ParentMenu The parent menu.
+  -- @param CommandMenuFunction A function that is called when the menu key is pressed.
+  -- @param CommandMenuArgument An argument for the function. There can only be ONE argument given. So multiple arguments must be wrapped into a table. See the below example how to do this.
+  -- @return #MENU_MISSION_COMMAND self
+  function MENU_MISSION_COMMAND:New( MenuText, ParentMenu, CommandMenuFunction, ... )
+  
+    local self = BASE:Inherit( self, MENU_COMMAND_BASE:New( MenuText, ParentMenu, CommandMenuFunction, arg ) )
+    
+    self.MenuText = MenuText
+    self.ParentMenu = ParentMenu
+  
+    self:T( { MenuText, CommandMenuFunction, arg } )
+    
+  
+    self.MenuPath = missionCommands.addCommand( MenuText, self.MenuParentPath, self.MenuCallHandler, arg )
+   
+    ParentMenu.Menus[self.MenuPath] = self
+    
+    return self
+  end
+  
+  --- Removes a radio command item for a coalition
+  -- @param #MENU_MISSION_COMMAND self
+  -- @return #nil
+  function MENU_MISSION_COMMAND:Remove()
+    self:F( self.MenuPath )
+  
+    missionCommands.removeItem( self.MenuPath )
+    if self.ParentMenu then
+      self.ParentMenu.Menus[self.MenuPath] = nil
+    end
+    return nil
+  end
+
+end
+
+
 
 do -- MENU_COALITION
 
@@ -7539,7 +7705,6 @@ do -- MENU_CLIENT
   --
   --  --- @param Client#CLIENT MenuClient
   --  local function AddStatusMenu( MenuClient )
-  --    env.info(MenuClient.ClientName)
   --    local MenuClientName = MenuClient:GetName()
   --    -- This would create a menu for the red coalition under the MenuCoalitionRed menu object.
   --    MenuStatus[MenuClientName] = MENU_CLIENT:New( MenuClient, "Status for Planes" )
@@ -7766,7 +7931,6 @@ do
   --
   --  --- @param Group#GROUP MenuGroup
   --  local function AddStatusMenu( MenuGroup )
-  --    env.info(MenuGroup.GroupName)
   --    local MenuGroupName = MenuGroup:GetName()
   --    -- This would create a menu for the red coalition under the MenuCoalitionRed menu object.
   --    MenuStatus[MenuGroupName] = MENU_GROUP:New( MenuGroup, "Status for Planes" )
@@ -11934,8 +12098,15 @@ end
 -- 
 -- ====
 -- 
+-- ### Contributions: 
+-- 
+--   * Mechanist : Concept & Testing
+-- 
+-- ### Authors: 
+-- 
+--   * FlightControl : Design & Programming
+-- 
 -- @module Set
--- @author FlightControl
 
 
 --- SET_BASE class
@@ -12027,6 +12198,8 @@ function SET_BASE:Remove( ObjectName )
   self:F( ObjectName )
 
   local t = self.Set[ObjectName]
+  
+  self:E( { ObjectName, t } )
 
   if t then  
     if t._next then
@@ -12841,7 +13014,7 @@ function SET_UNIT:RemoveUnitsByName( RemoveUnitNames )
   local RemoveUnitNamesArray = ( type( RemoveUnitNames ) == "table" ) and RemoveUnitNames or { RemoveUnitNames }
   
   for RemoveUnitID, RemoveUnitName in pairs( RemoveUnitNamesArray ) do
-    self:Remove( RemoveUnitName.UnitName )
+    self:Remove( RemoveUnitName )
   end
     
   return self
@@ -14628,8 +14801,8 @@ end
 -- @param #SCORING self
 -- @return #SCORING self
 function SCORING:ScoreMenu()
-  self.Menu = SUBMENU:New( 'Scoring' )
-  self.AllScoresMenu = COMMANDMENU:New( 'Score All Active Players', self.Menu, SCORING.ReportScoreAll, self )
+  self.Menu = MENU_MISSION:New( 'Scoring' )
+  self.AllScoresMenu = MENU_MISSION_COMMAND:New( 'Score All Active Players', self.Menu, SCORING.ReportScoreAll, self )
   --- = COMMANDMENU:New('Your Current Score', ReportScore, SCORING.ReportScorePlayer, self )
   return self
 end
@@ -23076,7 +23249,7 @@ end
 -- It suports the following functionality:
 --
 --  * Track the missiles fired at you and other players, providing bearing and range information of the missiles towards the airplanes.
---  * Provide alerts of missile launches, including detailed information of the units launching, including bearing, range …
+--  * Provide alerts of missile launches, including detailed information of the units launching, including bearing, range ï¿½
 --  * Provide alerts when a missile would have killed your aircraft.
 --  * Provide alerts when the missile self destructs.
 --  * Enable / Disable and Configure the Missile Trainer using the various menu options.
@@ -23528,42 +23701,47 @@ function MISSILETRAINER:_EventShot( Event )
   self:T( "Missile Launched = " .. TrainerWeaponName )
 
   local TrainerTargetDCSUnit = TrainerWeapon:getTarget() -- Identify target
-  local TrainerTargetDCSUnitName = Unit.getName( TrainerTargetDCSUnit )
-  local TrainerTargetSkill =  _DATABASE.Templates.Units[TrainerTargetDCSUnitName].Template.skill
-
-  self:T(TrainerTargetDCSUnitName )
-
-  local Client = self.DBClients:FindClient( TrainerTargetDCSUnitName )
-  if Client then
-
-    local TrainerSourceUnit = UNIT:Find( TrainerSourceDCSUnit )
-    local TrainerTargetUnit = UNIT:Find( TrainerTargetDCSUnit )
-
-    if self.MessagesOnOff == true and self.AlertsLaunchesOnOff == true then
-
-      local Message = MESSAGE:New(
-        string.format( "%s launched a %s",
-          TrainerSourceUnit:GetTypeName(),
-          TrainerWeaponName
-        ) .. self:_AddRange( Client, TrainerWeapon ) .. self:_AddBearing( Client, TrainerWeapon ), 5, "Launch Alert" )
-
-      if self.AlertsToAll then
-        Message:ToAll()
-      else
-        Message:ToClient( Client )
+  if TrainerTargetDCSUnit then
+    local TrainerTargetDCSUnitName = Unit.getName( TrainerTargetDCSUnit )
+    local TrainerTargetSkill =  _DATABASE.Templates.Units[TrainerTargetDCSUnitName].Template.skill
+  
+    self:T(TrainerTargetDCSUnitName )
+  
+    local Client = self.DBClients:FindClient( TrainerTargetDCSUnitName )
+    if Client then
+  
+      local TrainerSourceUnit = UNIT:Find( TrainerSourceDCSUnit )
+      local TrainerTargetUnit = UNIT:Find( TrainerTargetDCSUnit )
+  
+      if self.MessagesOnOff == true and self.AlertsLaunchesOnOff == true then
+  
+        local Message = MESSAGE:New(
+          string.format( "%s launched a %s",
+            TrainerSourceUnit:GetTypeName(),
+            TrainerWeaponName
+          ) .. self:_AddRange( Client, TrainerWeapon ) .. self:_AddBearing( Client, TrainerWeapon ), 5, "Launch Alert" )
+  
+        if self.AlertsToAll then
+          Message:ToAll()
+        else
+          Message:ToClient( Client )
+        end
       end
+  
+      local ClientID = Client:GetID()
+      self:T( ClientID )
+      local MissileData = {}
+      MissileData.TrainerSourceUnit = TrainerSourceUnit
+      MissileData.TrainerWeapon = TrainerWeapon
+      MissileData.TrainerTargetUnit = TrainerTargetUnit
+      MissileData.TrainerWeaponTypeName = TrainerWeapon:getTypeName()
+      MissileData.TrainerWeaponLaunched = true
+      table.insert( self.TrackingMissiles[ClientID].MissileData, MissileData )
+      --self:T( self.TrackingMissiles )
     end
-
-    local ClientID = Client:GetID()
-    self:T( ClientID )
-    local MissileData = {}
-    MissileData.TrainerSourceUnit = TrainerSourceUnit
-    MissileData.TrainerWeapon = TrainerWeapon
-    MissileData.TrainerTargetUnit = TrainerTargetUnit
-    MissileData.TrainerWeaponTypeName = TrainerWeapon:getTypeName()
-    MissileData.TrainerWeaponLaunched = true
-    table.insert( self.TrackingMissiles[ClientID].MissileData, MissileData )
-    --self:T( self.TrackingMissiles )
+  else
+     -- TODO: some weapons don't know the target unit... Need to develop a workaround for this.
+    SCHEDULER:New( TrainerWeapon, TrainerWeapon.destroy, {}, 2 )
   end
 end
 
@@ -24052,22 +24230,24 @@ end--- This module contains the AIBALANCER class.
 -- 1.3) AIBALANCER allows AI to patrol specific zones:
 -- ---------------------------------------------------
 -- Use @{AIBalancer#AIBALANCER.SetPatrolZone}() to specify a zone where the AI needs to patrol.
--- 
 --
 -- ===
 -- 
--- CREDITS
--- =======
--- **Dutch_Baron (James)** Who you can search on the Eagle Dynamics Forums.
--- Working together with James has resulted in the creation of the AIBALANCER class. 
--- James has shared his ideas on balancing AI with air units, and together we made a first design which you can use now :-)
+-- ### Contributions: 
 -- 
--- **SNAFU**
--- Had a couple of mails with the guys to validate, if the same concept in the GCI/CAP script could be reworked within MOOSE.
--- None of the script code has been used however within the new AIBALANCER moose class.
+--   * **Dutch_Baron (James)** Who you can search on the Eagle Dynamics Forums.  
+--   Working together with James has resulted in the creation of the AIBALANCER class.  
+--   James has shared his ideas on balancing AI with air units, and together we made a first design which you can use now :-)
+-- 
+--   * **SNAFU**
+--   Had a couple of mails with the guys to validate, if the same concept in the GCI/CAP script could be reworked within MOOSE.
+--   None of the script code has been used however within the new AIBALANCER moose class.
+-- 
+-- ### Authors: 
+-- 
+--   * FlightControl - Framework Design &  Programming
 -- 
 -- @module AIBalancer
--- @author FlightControl
 
 --- AIBALANCER class
 -- @type AIBALANCER
@@ -24319,8 +24499,10 @@ end
 --   * Creech
 --   * Groom Lake
 --
+-- ### Contributions: Dutch Baron - Concept & Testing
+-- ### Author: FlightControl - Framework Design &  Programming
+--
 -- @module AirbasePolice
--- @author Flight Control & DUTCH BARON
 
 
 
@@ -25526,8 +25708,13 @@ end
 -- 
 -- ===
 -- 
--- ### Contributions: Mechanic - Concept & Testing
--- ### Authors: FlightControl : Design & Programming
+-- ### Contributions: 
+-- 
+--   * Mechanist : Concept & Testing
+-- 
+-- ### Authors: 
+-- 
+--   * FlightControl : Design & Programming
 -- 
 -- @module Detection
 
@@ -26197,7 +26384,7 @@ function DETECTION_AREAS:GetChangeText( DetectedArea )
     end
 
     if ChangeCode == "RAU" then
-      MT[#MT+1] = "Changed area " .. ChangeData.AreaID .. ". Removed the center target " .. ChangeData.AreaUnitType "."
+      MT[#MT+1] = "Changed area " .. ChangeData.AreaID .. ". Removed the center target."
     end
     
     if ChangeCode == "AAU" then
@@ -26282,7 +26469,7 @@ function DETECTION_AREAS:CreateDetectionSets()
         -- First remove the center unit from the set.
         DetectedSet:RemoveUnitsByName( DetectedArea.Zone.ZoneUNIT.UnitName )
 
-        self:AddChangeArea( DetectedArea, 'RAU', DetectedArea.Zone.ZoneUNIT:GetTypeName() )
+        self:AddChangeArea( DetectedArea, 'RAU', "Dummy" )
         
         -- Then search for a new center area unit within the set. Note that the new area unit candidate must be within the area range.
         for DetectedUnitName, DetectedUnitData in pairs( DetectedSet:GetSet() ) do
@@ -26497,7 +26684,7 @@ end
 --    
 -- ===
 -- 
--- ### Contributions: Mechanic, Prof_Hilactic, FlightControl - Concept & Testing
+-- ### Contributions: Mechanist, Prof_Hilactic, FlightControl - Concept & Testing
 -- ### Author: FlightControl - Framework Design &  Programming
 -- 
 -- @module DetectionManager
@@ -27262,27 +27449,21 @@ function PROCESS:New( ProcessName, Task, ProcessUnit )
   self.Task = Task
   self.ProcessName = ProcessName
   
-  self.AllowEvents = true
+  self.ProcessScheduler = SCHEDULER:New()
   
   return self
 end
 
 --- @param #PROCESS self
 function PROCESS:NextEvent( NextEvent, ... )
-  if self.AllowEvents == true then
-    self.ProcessScheduler = SCHEDULER:New( self.Fsm, NextEvent, arg, 1 )
-  end
+  self:F(self.ProcessName)
+  self.ProcessScheduler:Schedule( self.Fsm, NextEvent, arg, 1 ) -- This schedules the next event, but only if scheduling is activated.
 end
 
 --- @param #PROCESS self
-function PROCESS:StopEvents( )
-  self:F2()
-  if self.ProcessScheduler then
-    self:E( "Stop" )
-    self.ProcessScheduler:Stop()
-    self.ProcessScheduler = nil
-    self.AllowEvents = false
-  end
+function PROCESS:StopEvents()
+  self:F( { "Stop Process ", self.ProcessName } )
+  self.ProcessScheduler:Stop()
 end
 
 --- Adds a score for the PROCESS to be achieved.
@@ -27728,7 +27909,7 @@ function PROCESS_DESTROY:New( Task, ProcessName, ProcessUnit, TargetSetUnit )
   
   self.TargetSetUnit = TargetSetUnit
 
-  self.DisplayInterval = 60
+  self.DisplayInterval = 30
   self.DisplayCount = 30
   self.DisplayMessage = true
   self.DisplayTime = 10 -- 10 seconds is the default
@@ -27812,7 +27993,7 @@ function PROCESS_DESTROY:OnHitTarget( Fsm, Event, From, To, Event )
   if self.TargetSetUnit:FindUnit( Event.IniUnitName ) then
     self.TargetSetUnit:RemoveUnitsByName( Event.IniUnitName )
     local TaskGroup = self.ProcessUnit:GetGroup()
-    MESSAGE:New( "You hit a target. Your group with assigned " .. self.Task:GetName() .. " task has " .. self.TargetSetUnit:GetUnitTypesText() .. " targets left to be destroyed.", 15, "HQ" ):ToGroup( TaskGroup )
+    MESSAGE:New( "You hit a target. Your group with assigned " .. self.Task:GetName() .. " task has " .. self.TargetSetUnit:Count() .. " targets ( " .. self.TargetSetUnit:GetUnitTypesText() .. " ) left to be destroyed.", 15, "HQ" ):ToGroup( TaskGroup )
   end
 
   

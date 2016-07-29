@@ -218,8 +218,15 @@
 -- 
 -- ====
 -- 
+-- ### Contributions: 
+-- 
+--   * Mechanist : Concept & Testing
+-- 
+-- ### Authors: 
+-- 
+--   * FlightControl : Design & Programming
+-- 
 -- @module Set
--- @author FlightControl
 
 
 --- SET_BASE class
@@ -311,6 +318,8 @@ function SET_BASE:Remove( ObjectName )
   self:F( ObjectName )
 
   local t = self.Set[ObjectName]
+  
+  self:E( { ObjectName, t } )
 
   if t then  
     if t._next then
@@ -1125,7 +1134,7 @@ function SET_UNIT:RemoveUnitsByName( RemoveUnitNames )
   local RemoveUnitNamesArray = ( type( RemoveUnitNames ) == "table" ) and RemoveUnitNames or { RemoveUnitNames }
   
   for RemoveUnitID, RemoveUnitName in pairs( RemoveUnitNamesArray ) do
-    self:Remove( RemoveUnitName.UnitName )
+    self:Remove( RemoveUnitName )
   end
     
   return self
