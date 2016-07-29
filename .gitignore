@@ -224,3 +224,7 @@ _gsdata_/
 #GITHUB
 .gitattributes
 .gitignore
+
+#IntelliJ
+.idea/*
+*.iml
