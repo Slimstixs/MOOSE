@@ -139,7 +139,7 @@ So in principle, the group list will contain all parameters and configurations a
 
 <ul>
     <li><a href="##(SPAWN).Limit">SPAWN.Limit</a>: Limits the amount of groups that can be alive at the same time and that can be dynamically spawned.</li>
-    <li><a href="##(SPAWN).RandomizeRoute">SPAWN.RandomizeRoute</a>: Randomize the routes of spawned groups.</li>
+    <li><a href="##(SPAWN).RandomizeRoute">SPAWN.RandomizeRoute</a>: Randomize the routes of spawned groups, and for air groups also optionally the height.</li>
     <li><a href="##(SPAWN).RandomizeTemplate">SPAWN.RandomizeTemplate</a>: Randomize the group templates so that when a new group is spawned, a random group template is selected from one of the templates defined. </li>
     <li><a href="##(SPAWN).Uncontrolled">SPAWN.Uncontrolled</a>: Spawn plane groups uncontrolled.</li>
     <li><a href="##(SPAWN).Array">SPAWN.Array</a>: Make groups visible before they are actually activated, and order these groups like a batallion in an array.</li>
@@ -310,7 +310,7 @@ Check the <a href="##(SPAWN).CleanUp">SPAWN.CleanUp</a> for further info.</p>
 </td>
 		</tr>
 		<tr>
-		<td class="name" nowrap="nowrap"><a href="##(SPAWN).RandomizeRoute">SPAWN:RandomizeRoute(SpawnStartPoint, SpawnEndPoint, SpawnRadius)</a></td>
+		<td class="name" nowrap="nowrap"><a href="##(SPAWN).RandomizeRoute">SPAWN:RandomizeRoute(SpawnStartPoint, SpawnEndPoint, SpawnRadius, SpawnHeight)</a></td>
 		<td class="summary">
 <p>Randomizes the defined route of the SpawnTemplatePrefix group in the ME.</p>
 </td>
@@ -449,6 +449,12 @@ Check the <a href="##(SPAWN).CleanUp">SPAWN.CleanUp</a> for further info.</p>
 		</tr>
 		<tr>
 		<td class="name" nowrap="nowrap"><a href="##(SPAWN).SpawnRandomizeRouteEndPoint">SPAWN.SpawnRandomizeRouteEndPoint</a></td>
+		<td class="summary">
+
+</td>
+		</tr>
+		<tr>
+		<td class="name" nowrap="nowrap"><a href="##(SPAWN).SpawnRandomizeRouteHeight">SPAWN.SpawnRandomizeRouteHeight</a></td>
 		<td class="summary">
 
 </td>
@@ -1196,7 +1202,7 @@ Spawn_BE_KA50 = SPAWN:NewWithAlias( 'BE KA-50@RAMP-Ground Defense', 'Helicopter 
 <dt>
 
 <a id="#(SPAWN).RandomizeRoute" >
-<strong>SPAWN:RandomizeRoute(SpawnStartPoint, SpawnEndPoint, SpawnRadius)</strong>
+<strong>SPAWN:RandomizeRoute(SpawnStartPoint, SpawnEndPoint, SpawnRadius, SpawnHeight)</strong>
 </a>
 </dt>
 <dd>
@@ -1226,6 +1232,12 @@ This parameter is useful to avoid randomization to end at a waypoint earlier tha
 				
 <p><code><em>#number SpawnRadius </em></code>: 
 is the radius in meters in which the randomization of the new waypoints, with the original waypoint of the original template located in the middle ...</p>
+
+				</li>
+				<li>
+				
+<p><code><em>#number SpawnHeight </em></code>: 
+(optional) Specifies the <strong>additional</strong> height in meters that can be added to the base height specified at each waypoint in the ME.</p>
 
 				</li>
 		</ul>
@@ -1881,6 +1893,20 @@ when nothing was spawned.</p>
 		<em></em>
 <a id="#(SPAWN).SpawnRandomizeRouteEndPoint" >
 <strong>SPAWN.SpawnRandomizeRouteEndPoint</strong>
+</a>
+</dt>
+<dd>
+	
+
+
+</dd>
+</dl>
+		<dl class="function">
+<dt>
+
+		<em></em>
+<a id="#(SPAWN).SpawnRandomizeRouteHeight" >
+<strong>SPAWN.SpawnRandomizeRouteHeight</strong>
 </a>
 </dt>
 <dd>
