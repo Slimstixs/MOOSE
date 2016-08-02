@@ -213,7 +213,6 @@ end
 --	
 --	self.RefreshInterval = RefreshInterval
 --
---	--self.DisplayFunction = routines.scheduleFunction( self._DisplayMessages, { self }, 0, RefreshInterval )
 --  self.DisplayFunction = SCHEDULER:New( self, self._DisplayMessages, {}, 0, RefreshInterval )
 --
 --	return self

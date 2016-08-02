@@ -110,7 +110,7 @@ FORMATION = {
 -- end
 -- @todo need to investigate if the deepCopy is really needed... Don't think so.
 function BASE:New()
-  local self = routines.utils.deepCopy( self ) -- Create a new self instance
+  local self = UTILS.DeepCopy( self ) -- Create a new self instance
 	local MetaTable = {}
 	setmetatable( self, MetaTable )
 	self.__index = self
@@ -125,8 +125,8 @@ end
 -- @param #BASE Parent is the Parent class that the Child inherits from.
 -- @return #BASE Child
 function BASE:Inherit( Child, Parent )
-	local Child = routines.utils.deepCopy( Child )
-	--local Parent = routines.utils.deepCopy( Parent )
+	local Child = UTILS.DeepCopy( Child )
+	--local Parent = UTILS.DeepCopy( Parent )
   --local Parent = Parent
 	if Child ~= nil then
 		setmetatable( Child, Parent )
@@ -469,7 +469,7 @@ function BASE:_F( Arguments, DebugInfoCurrentParam, DebugInfoFromParam )
       if DebugInfoFrom then
         LineFrom = DebugInfoFrom.currentline
       end
-      env.info( string.format( "%6d(%6d)/%1s:%20s%05d.%s(%s)" , LineCurrent, LineFrom, "F", self.ClassName, self.ClassID, Function, routines.utils.oneLineSerialize( Arguments ) ) )
+      env.info( string.format( "%6d(%6d)/%1s:%20s%05d.%s(%s)" , LineCurrent, LineFrom, "F", self.ClassName, self.ClassID, Function, UTILS.OneLineSerialize( Arguments ) ) )
     end
   end
 end
@@ -544,7 +544,7 @@ function BASE:_T( Arguments, DebugInfoCurrentParam, DebugInfoFromParam )
   		if DebugInfoFrom then
   		  LineFrom = DebugInfoFrom.currentline
   	  end
-  		env.info( string.format( "%6d(%6d)/%1s:%20s%05d.%s" , LineCurrent, LineFrom, "T", self.ClassName, self.ClassID, routines.utils.oneLineSerialize( Arguments ) ) )
+  		env.info( string.format( "%6d(%6d)/%1s:%20s%05d.%s" , LineCurrent, LineFrom, "T", self.ClassName, self.ClassID, UTILS.OneLineSerialize( Arguments ) ) )
     end
 	end
 end
@@ -615,7 +615,7 @@ function BASE:E( Arguments )
   	  LineFrom = DebugInfoFrom.currentline
   	end
   
-  	env.info( string.format( "%6d(%6d)/%1s:%20s%05d.%s(%s)" , LineCurrent, LineFrom, "E", self.ClassName, self.ClassID, Function, routines.utils.oneLineSerialize( Arguments ) ) )
+  	env.info( string.format( "%6d(%6d)/%1s:%20s%05d.%s(%s)" , LineCurrent, LineFrom, "E", self.ClassName, self.ClassID, Function, UTILS.OneLineSerialize( Arguments ) ) )
   end
   
 end

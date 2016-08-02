@@ -123,6 +123,7 @@
 -- @field #string EscortName
 -- @field #ESCORT.MODE EscortMode The mode the escort is in.
 -- @field Scheduler#SCHEDULER FollowScheduler The instance of the SCHEDULER class.
+-- @field Scheduler#SCHEDULER ReportTargetsScheduler The ReportTargetsSchedule SCHEDULER object.
 -- @field #number FollowDistance The current follow distance.
 -- @field #boolean ReportTargets If true, nearby targets are reported.
 -- @Field DCSTypes#AI.Option.Air.val.ROE OptionROE Which ROE is set to the EscortGroup.
@@ -770,7 +771,7 @@ end
 
 function ESCORT._SwitchReportNearbyTargets( MenuParam )
 
-  local self = MenuParam.ParamSelf
+  local self = MenuParam.ParamSelf -- #ESCORT
   local EscortGroup = self.EscortGroup
   local EscortClient = self.EscortClient
 
@@ -781,7 +782,9 @@ function ESCORT._SwitchReportNearbyTargets( MenuParam )
       self.ReportTargetsScheduler = SCHEDULER:New( self, self._ReportTargetsScheduler, {}, 1, 30 )
     end
   else
-    routines.removeFunction( self.ReportTargetsScheduler )
+    if self.ReportTargetsScheduler then
+      self.ReportTargetsScheduler:Stop()
+    end
     self.ReportTargetsScheduler = nil
   end
 end

@@ -77,8 +77,6 @@ function DEPLOYTASK:SetCargoTargetZoneName( TargetZoneName )
   
   local Valid = true
   
-  Valid = routines.ValidateString( TargetZoneName, "TargetZoneName", Valid )
-  
   if Valid then
     self.TargetZoneName = TargetZoneName
   end

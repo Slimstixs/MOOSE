@@ -18,8 +18,6 @@ function ROUTETASK:New( LandingZones, TaskBriefing )
 
   local Valid = true
   
-  Valid = routines.ValidateZone( LandingZones, "LandingZones", Valid )
-    
   if  Valid then
     self.Name = 'Route To Zone'
 	if TaskBriefing then

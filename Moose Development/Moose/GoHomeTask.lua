@@ -15,8 +15,6 @@ function GOHOMETASK:New( LandingZones )
 	self:F( { LandingZones } )
   local Valid = true
   
-  Valid = routines.ValidateZone( LandingZones, "LandingZones", Valid )
-    
   if  Valid then
     self.Name = 'Fly Home'
     self.TaskBriefing = "Task: Fly back to your home base. Your co-pilot will provide you with the directions (required flight angle in degrees) and the distance (in km) to your home base."

@@ -31,7 +31,7 @@ function STATEMACHINE:New( options )
   local self = BASE:Inherit( self, BASE:New() )
 
 
-  --local self = routines.utils.deepCopy( self ) -- Create a new self instance
+  --local self = UTILS.DeepCopy( self ) -- Create a new self instance
 
   assert(options.events)
 
@@ -228,7 +228,7 @@ STATEMACHINE_PROCESS = {
 -- @return #STATEMACHINE_PROCESS
 function STATEMACHINE_PROCESS:New( Process, options )
 
-  local FsmProcess = routines.utils.deepCopy( self ) -- Create a new self instance
+  local FsmProcess = UTILS.DeepCopy( self ) -- Create a new self instance
   local Parent = STATEMACHINE:New(options)
 
   setmetatable( FsmProcess, Parent )
@@ -259,7 +259,7 @@ STATEMACHINE_TASK = {
 -- @return #STATEMACHINE_TASK
 function STATEMACHINE_TASK:New( Task, TaskUnit, options )
 
-  local FsmTask = routines.utils.deepCopy( self ) -- Create a new self instance
+  local FsmTask = UTILS.DeepCopy( self ) -- Create a new self instance
   local Parent = STATEMACHINE:New(options)
 
   setmetatable( FsmTask, Parent )

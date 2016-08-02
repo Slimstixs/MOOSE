@@ -2,7 +2,7 @@
 -- 
 -- 1) @{#TASK_A2G} class, extends @{Task#TASK_BASE}
 -- =================================================
--- The @{#TASK_A2G} class defines a new CAS task of a @{Set} of Target Units, located at a Target Zone, based on the tasking capabilities defined in @{Task#TASK_BASE}.
+-- The @{#TASK_A2G} class defines a new A2G task of a @{Set} of Target Units, located at a Target Zone, based on the tasking capabilities defined in @{Task#TASK_BASE}.
 -- The TASK_A2G is processed through a @{Statemachine#STATEMACHINE_TASK}, and has the following statuses:
 -- 
 --   * **None**: Start of the process
@@ -15,7 +15,7 @@
 -- 
 -- ### Authors: FlightControl - Design and Programming
 -- 
--- @module Task_CAS
+-- @module Task_A2G
 
 
 do -- TASK_A2G

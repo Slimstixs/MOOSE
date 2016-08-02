@@ -338,7 +338,6 @@ function SPAWN:CleanUp( SpawnCleanUpInterval )
 
 	self.SpawnCleanUpInterval = SpawnCleanUpInterval
 	self.SpawnCleanUpTimeStamps = {}
-	--self.CleanUpFunction = routines.scheduleFunction( self._SpawnCleanUpScheduler, { self }, timer.getTime() + 1, SpawnCleanUpInterval )
 	self.CleanUpScheduler = SCHEDULER:New( self, self._SpawnCleanUpScheduler, {}, 1, SpawnCleanUpInterval, 0.2 )
 	return self
 end
@@ -997,7 +996,7 @@ function SPAWN:_GetTemplate( SpawnTemplatePrefix )
 
 	local SpawnTemplate = nil
 
-	SpawnTemplate = routines.utils.deepCopy( _DATABASE.Templates.Groups[SpawnTemplatePrefix].Template )
+	SpawnTemplate = UTILS.DeepCopy( _DATABASE.Templates.Groups[SpawnTemplatePrefix].Template )
 	
 	if SpawnTemplate == nil then
 		error( 'No Template returned for SpawnTemplatePrefix = ' .. SpawnTemplatePrefix )
@@ -1089,7 +1088,7 @@ function SPAWN:_RandomizeTemplate( SpawnIndex )
   if self.SpawnRandomizeTemplate then
     self.SpawnGroups[SpawnIndex].SpawnTemplatePrefix = self.SpawnTemplatePrefixTable[ math.random( 1, #self.SpawnTemplatePrefixTable ) ]
     self.SpawnGroups[SpawnIndex].SpawnTemplate = self:_Prepare( self.SpawnGroups[SpawnIndex].SpawnTemplatePrefix, SpawnIndex )
-    self.SpawnGroups[SpawnIndex].SpawnTemplate.route = routines.utils.deepCopy( self.SpawnTemplate.route )
+    self.SpawnGroups[SpawnIndex].SpawnTemplate.route = UTILS.DeepCopy( self.SpawnTemplate.route )
     self.SpawnGroups[SpawnIndex].SpawnTemplate.x = self.SpawnTemplate.x
     self.SpawnGroups[SpawnIndex].SpawnTemplate.y = self.SpawnTemplate.y
     self.SpawnGroups[SpawnIndex].SpawnTemplate.start_time = self.SpawnTemplate.start_time

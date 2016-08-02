@@ -69,7 +69,7 @@ UTILS.OneLineSerialize = function( tbl )  -- serialization of a table all on a s
           ind_str[#ind_str + 1] = ']='
         else --must be a string
           ind_str[#ind_str + 1] = '['
-          ind_str[#ind_str + 1] = routines.utils.basicSerialize(ind)
+          ind_str[#ind_str + 1] = UTILS.BasicSerialize(ind)
           ind_str[#ind_str + 1] = ']='
         end
 
@@ -80,7 +80,7 @@ UTILS.OneLineSerialize = function( tbl )  -- serialization of a table all on a s
           tbl_str[#tbl_str + 1] = table.concat(ind_str)
           tbl_str[#tbl_str + 1] = table.concat(val_str)
       elseif type(val) == 'string' then
-          val_str[#val_str + 1] = routines.utils.basicSerialize(val)
+          val_str[#val_str + 1] = UTILS.BasicSerialize(val)
           val_str[#val_str + 1] = ','
           tbl_str[#tbl_str + 1] = table.concat(ind_str)
           tbl_str[#tbl_str + 1] = table.concat(val_str)
@@ -103,7 +103,7 @@ UTILS.OneLineSerialize = function( tbl )  -- serialization of a table all on a s
         --  tbl_str[#tbl_str + 1] = "function " .. tostring(ind)
         --  tbl_str[#tbl_str + 1] = ','   --I think this is right, I just added it
         else
---          env.info('unable to serialize value type ' .. routines.utils.basicSerialize(type(val)) .. ' at index ' .. tostring(ind))
+--          env.info('unable to serialize value type ' .. UTILS.BasicSerialize(type(val)) .. ' at index ' .. tostring(ind))
 --          env.info( debug.traceback() )
         end
   

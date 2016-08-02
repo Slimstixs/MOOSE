@@ -22,7 +22,7 @@ routines.build = 22
 routines.utils = {}
 
 --from http://lua-users.org/wiki/CopyTable
-routines.utils.deepCopy = function(object)
+UTILS.DeepCopy = function(object)
 	local lookup_table = {}
 	local function _copy(object)
 		if type(object) ~= "table" then
@@ -43,7 +43,7 @@ end
 
 
 -- porting in Slmod's serialize_slmod2
-routines.utils.oneLineSerialize = function(tbl)  -- serialization of a table all on a single line, no comments, made to replace old get_table_string function
+UTILS.OneLineSerialize = function(tbl)  -- serialization of a table all on a single line, no comments, made to replace old get_table_string function
 
 	lookup_table = {}
 	
@@ -484,7 +484,7 @@ routines.goRoute = function(group, path)
 		id = 'Mission',
 		params = {
 			route = {
-				points = routines.utils.deepCopy(path),
+				points = UTILS.DeepCopy(path),
 			},
 		},
 	}
@@ -1720,7 +1720,7 @@ routines.ground.patrolRoute = function(vars)
 		end
 			
 		if pType and string.lower(pType) == 'doubleback' then
-			local curRoute = routines.utils.deepCopy(useRoute)
+			local curRoute = UTILS.DeepCopy(useRoute)
 			for i = #curRoute, 2, -1 do
 				useRoute[#useRoute + 1] = routines.ground.buildWP(curRoute[i], curRoute[i].action, curRoute[i].speed)
 			end
@@ -1734,7 +1734,7 @@ routines.ground.patrolRoute = function(vars)
 	newPatrol.route = useRoute
 	newPatrol.gpData = gpData:getName()
 	cTask3[#cTask3 + 1] = 'routines.ground.patrolRoute('
-	cTask3[#cTask3 + 1] = routines.utils.oneLineSerialize(newPatrol)
+	cTask3[#cTask3 + 1] = UTILS.OneLineSerialize(newPatrol)
 	cTask3[#cTask3 + 1] = ')'
 	cTask3 = table.concat(cTask3)
 	local tempTask = {

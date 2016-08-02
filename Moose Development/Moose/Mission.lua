@@ -473,7 +473,7 @@ function MISSIONSCHEDULER.Scheduler()
 						Client.ClientBriefingShown = false
 						for TaskNumber, Task in pairs( Mission._Tasks ) do
 							-- Note that this a deepCopy. Each client must have their own Tasks with own Stages!!!
-							Client._Tasks[TaskNumber] = routines.utils.deepCopy( Mission._Tasks[TaskNumber] )
+							Client._Tasks[TaskNumber] = UTILS.DeepCopy( Mission._Tasks[TaskNumber] )
 							-- Each MissionTask must point to the original Mission.
 							Client._Tasks[TaskNumber].MissionTask = Mission._Tasks[TaskNumber]
 							Client._Tasks[TaskNumber].Cargos = Mission._Tasks[TaskNumber].Cargos
