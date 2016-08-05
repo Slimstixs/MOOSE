@@ -254,5 +254,12 @@ function POSITIONABLE:GetVelocityKMH()
 end
 
 
+--- Provides ability to specify function to be performed upon the death of the POSITIONABLE
+-- @param CallbackFunction (a function that specifies actions to perform upon death of the POSITIONABLE
+function POSITIONABLE:OnDeath( CallbackFunction )
+  self:F2( self.PositioniableName )
+
+  _EVENTDISPATCHER:OnDeadForUnit( self:GetName(), CallbackFunction, self )
+end
 
 

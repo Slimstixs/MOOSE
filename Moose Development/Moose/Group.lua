@@ -865,3 +865,13 @@ function GROUP:CopyRoute( Begin, End, Randomize, Radius )
 end
 
 
+--- Provides ability to specify function to be performed upon the death of the GROUP
+-- @param CallbackFunction (a function that specifies actions to perform upon death of the GROUP
+function GROUP:OnDeath( CallbackFunction )
+  self:F2( self.PositioniableName )
+
+  for UnitID, UnitData in pairs( self:GetUnits() ) do
+    _EVENTDISPATCHER:OnDeadForUnit( UnitData:GetName(), CallbackFunction, self )
+  end
+end
+
